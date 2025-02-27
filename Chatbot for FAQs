@@ -1,0 +1,124 @@
+# Step 1: Install required libraries
+!pip install -q transformers sentence-transformers datasets
+
+# Step 2: Import necessary components
+from sentence_transformers import SentenceTransformer, util
+import torch
+
+# Step 3: Create sample movie FAQ dataset (can be replaced with custom data)
+faq = [
+    {
+        "question": "Who directed The Dark Knight?",
+        "answer": "The Dark Knight was directed by Christopher Nolan."
+    },
+    {
+        "question": "When was Titanic released?",
+        "answer": "Titanic was released in 1997."
+    },
+    {
+        "question": "Who played Neo in The Matrix?",
+        "answer": "Keanu Reeves played Neo in The Matrix."
+    },
+    {
+        "question": "What is the highest-grossing movie of all time?",
+        "answer": "As of 2023, the highest-grossing movie is Avatar."
+    },
+    {
+        "question": "Who composed the score for Inception?",
+        "answer": "Hans Zimmer composed the score for Inception."
+    },
+    {
+        "question": "What is the plot of The Godfather?",
+        "answer": "The Godfather follows the story of the Corleone mafia family, focusing on Michael Corleone's transformation from a reluctant family outsider to a ruthless mafia boss."
+    },
+    {
+        "question": "Who starred in Pulp Fiction?",
+        "answer": "Pulp Fiction starred John Travolta, Uma Thurman, Samuel L. Jackson, and Bruce Willis."
+    },
+    {
+        "question": "What is the runtime of Avengers: Endgame?",
+        "answer": "Avengers: Endgame has a runtime of 3 hours and 2 minutes."
+    },
+    {
+        "question": "Who won the Best Actor Oscar for The Revenant?",
+        "answer": "Leonardo DiCaprio won the Best Actor Oscar for The Revenant."
+    },
+    {
+        "question": "What is the IMDb rating of The Shawshank Redemption?",
+        "answer": "The Shawshank Redemption has an IMDb rating of 9.3."
+    },
+    {
+        "question": "Who directed Inception?",
+        "answer": "Inception was directed by Christopher Nolan."
+    },
+    {
+        "question": "What is the plot of Inception?",
+        "answer": "Inception follows a thief who steals corporate secrets by entering the subconscious of his targets, but is offered a chance to have his criminal record erased in exchange for planting an idea in a target's mind."
+    },
+    {
+        "question": "Who played the Joker in The Dark Knight?",
+        "answer": "Heath Ledger played the Joker in The Dark Knight."
+    },
+    {
+        "question": "What is the runtime of The Lord of the Rings: The Return of the King?",
+        "answer": "The Lord of the Rings: The Return of the King has a runtime of 3 hours and 21 minutes."
+    },
+    {
+        "question": "Who directed Pulp Fiction?",
+        "answer": "Pulp Fiction was directed by Quentin Tarantino."
+    },
+    {
+        "question": "What is the plot of Interstellar?",
+        "answer": "Interstellar follows a group of astronauts who travel through a wormhole in search of a new habitable planet for humanity."
+    },
+    {
+        "question": "Who composed the score for Interstellar?",
+        "answer": "Hans Zimmer composed the score for Interstellar."
+    },
+    {
+        "question": "What is the IMDb rating of The Dark Knight?",
+        "answer": "The Dark Knight has an IMDb rating of 9.0."
+    },
+    {
+        "question": "Who directed The Shawshank Redemption?",
+        "answer": "The Shawshank Redemption was directed by Frank Darabont."
+    }
+]
+
+# Step 4: Initialize the sentence transformer model (memory-efficient)
+model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
+
+# Step 5: Precompute embeddings for all FAQ questions
+questions = [pair["question"] for pair in faq]
+question_embeddings = model.encode(questions, convert_to_tensor=True)
+
+# Step 6: Create chatbot function
+def movie_chatbot():
+    print("Movie Bot: Hi! Ask me anything about movies! (type 'exit' to quit)")
+    
+    while True:
+        user_input = input("You: ")
+        
+        if user_input.lower() in ['exit', 'quit']:
+            print("Movie Bot: Goodbye!")
+            break
+            
+        # Encode user input
+        input_embedding = model.encode(user_input, convert_to_tensor=True)
+        
+        # Compute similarity scores
+        cos_scores = util.cos_sim(input_embedding, question_embeddings)[0]
+        
+        # Find best match
+        best_match_idx = torch.argmax(cos_scores).item()
+        best_score = cos_scores[best_match_idx].item()
+        
+        # Threshold to handle unknown questions
+        if best_score > 0.5:
+            answer = faq[best_match_idx]["answer"]
+            print(f"Movie Bot: {answer}")
+        else:
+            print("Movie Bot: I'm not sure about that. Could you ask something else about movies?")
+
+# Step 7: Run the chatbot
+movie_chatbot()
